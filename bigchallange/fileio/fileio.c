@@ -16,16 +16,15 @@ int showMenu() {
     printf("==========================================\n");
     printf("Pilihan Anda >> ");
 
-    // Validasi input (Anti-Crash jika user input huruf)
     if (scanf("%d", &choice) != 1) {
-        while (getchar() != '\n'); // Bersihkan buffer
+        while (getchar() != '\n'); 
         return 0; 
     }
 
     return choice;
 }
 
-// FUNGSI SAVE (Format: [Abjad][Jml][Len][Kata][Freq])
+// FUNGSI SAVE (TETAP SAMA)
 void saveToBinary(AlphabetGroup data[], const char *filename) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
@@ -37,9 +36,7 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
         char abjad = 'a' + i;
         int count = data[i].count;
 
-        // 1. [Abjad]
         fwrite(&abjad, sizeof(char), 1, fp);
-        // 2. [Jumlah Kata di Abjad ini]
         fwrite(&count, sizeof(int), 1, fp);
 
         for (int j = 0; j < count; j++) {
@@ -47,20 +44,17 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
             int len = strlen(wordPtr);
             int freq = data[i].entries[j].frequency;
 
-            // 3. [Panjang Kata]
             fwrite(&len, sizeof(int), 1, fp);
-            // 4. [Kata]
             fwrite(wordPtr, sizeof(char), len, fp);
-            // 5. [Frekuensi]
             fwrite(&freq, sizeof(int), 1, fp);
         }
     }
 
     fclose(fp);
-    printf("[IO] Data tersimpan (Format Lengkap 5 Komponen) di '%s'.\n", filename);
+    printf("[IO] Data tersimpan di '%s'.\n", filename);
 }
 
-// FUNGSI READ (Tabel 5 Kolom)
+// FUNGSI READ (REVISI: TAMPILKAN SEMUA ABJAD A-Z)
 void readBinaryAndShow(const char *filename, int n) {
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
@@ -71,24 +65,28 @@ void readBinaryAndShow(const char *filename, int n) {
     printf("\n");
     printf("TAMPILAN DATA LENGKAP (%d Kata Teratas per Abjad)\n", n);
     
-    // Header Tabel 5 Kolom
     printf("================================================================================\n");
     printf("| %-5s | %-8s | %-7s | %-30s | %-11s |\n", 
-           "ABJAD", "JUMLAH", "PANJANG", "KATA", "FREKUENSI");
+           "ABJAD", "JML DATA", "PANJANG", "KATA", "FREKUENSI");
     printf("================================================================================\n");
 
-    int dataFound = 0; 
+    int totalData = 0; // Cek apakah file kosong total
 
+    // Loop A-Z (Wajib iterasi 26 kali)
     for (int i = 0; i < 26; i++) {
         char abjad;
         int count;
 
-        // Baca Header Group: [Abjad] & [Jumlah Kata]
+        // Baca Header: [Abjad] & [Jumlah]
         if (fread(&abjad, sizeof(char), 1, fp) != 1) break;
         fread(&count, sizeof(int), 1, fp);
 
+        // Siapkan tampilan huruf kapital (a -> A)
+        char abjadDisplay = abjad - 32; 
+
+        // KASUS 1: ADA DATA (Count > 0)
         if (count > 0) {
-            dataFound = 1;
+            totalData = 1;
             int printedCount = 0;
 
             for (int j = 0; j < count; j++) {
@@ -96,49 +94,44 @@ void readBinaryAndShow(const char *filename, int n) {
                 int freq;
                 char buffer[256]; 
 
-                // Baca Detail Kata: [Panjang] -> [Kata] -> [Frekuensi]
+                // Baca detail kata
                 fread(&len, sizeof(int), 1, fp);
-                
-                if (len >= 256) len = 255; // Safety
+                if (len >= 256) len = 255; 
                 fread(buffer, sizeof(char), len, fp);
-                buffer[len] = '\0'; // Null terminator
-
+                buffer[len] = '\0'; 
                 fread(&freq, sizeof(int), 1, fp);
 
-                // Tampilkan hanya jika belum mencapai batas N
+                // Tampilkan sesuai batas N
                 if (printedCount < n) {
-                    // Kolom Abjad & Jml Data hanya muncul di baris pertama grup
-                    char abjadDisplay = (printedCount == 0) ? (abjad - 32) : ' '; // Uppercase
-                    
-                    // Variabel bantu untuk print Jml Data (hanya baris pertama)
-                    // Jika bukan baris pertama, kita cetak string kosong ""
-                    // Tapi karena %d butuh int, kita akali dengan logika printf terpisah atau conditional value
-                    
-                    // Cetak Bagian Kiri (Abjad & Jumlah)
                     if (printedCount == 0) {
+                        // Baris Pertama: Tampilkan Abjad & Jumlah
                         printf("|   %c   | %-8d ", abjadDisplay, count);
                     } else {
-                        printf("|       |          "); // Kosongkan kolom ini
+                        // Baris Selanjutnya: Kosongkan kolom Abjad & Jumlah
+                        printf("|       |          "); 
                     }
 
-                    // Cetak Bagian Kanan (Panjang, Kata, Frekuensi)
                     printf("| %-7d | %-30s | %11d |\n", len, buffer, freq);
-                    
                     printedCount++;
                 }
             }
-            
-            // Garis pemisah antar abjad
-            if (printedCount > 0) {
-                printf("|-------+----------+---------+--------------------------------+-------------|\n");
-            }
+        } 
+        // KASUS 2: TIDAK ADA DATA (Count == 0) -> Tampilkan Baris Kosong
+        else {
+            printf("|   %c   | %-8d | %-7s | %-30s | %-11s |\n", 
+                   abjadDisplay, 0, "-", "-", "-");
         }
+
+        // Garis Pemisah (Selalu cetak setiap ganti huruf)
+        printf("|-------+----------+---------+--------------------------------+-------------|\n");
     }
 
-    if (!dataFound) {
-        printf("|                 TIDAK ADA DATA DITEMUKAN                                  |\n");
+    if (!totalData) {
+        printf("|                 FILE KOSONG / TIDAK ADA DATA                              |\n");
+        printf("================================================================================\n");
+    } else {
+        printf("================================================================================\n");
     }
-    
-    printf("===============================================================================\n");
+
     fclose(fp);
 }
