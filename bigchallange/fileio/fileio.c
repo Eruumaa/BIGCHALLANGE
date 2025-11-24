@@ -5,6 +5,7 @@
 
 int showMenu() {
     int choice;
+    
     printf("\n");
     printf("==========================================\n");
     printf("|      BIG CHALLENGE WORD COUNTER        |\n");
@@ -14,7 +15,18 @@ int showMenu() {
     printf("| 3. Exit                                |\n");
     printf("==========================================\n");
     printf("Pilihan Anda >> ");
-    scanf("%d", &choice);
+
+    // PERBAIKAN DI SINI:
+    // Cek apakah scanf berhasil membaca angka (return 1 = sukses)
+    if (scanf("%d", &choice) != 1) {
+        // Jika user mengetik huruf/simbol, scanf akan gagal (return 0)
+        // Kita harus membersihkan "sampah" input tersebut dari buffer
+        while (getchar() != '\n'); 
+        
+        // Return angka acak (misal 0) agar dianggap "Pilihan tidak valid" oleh main()
+        return 0; 
+    }
+
     return choice;
 }
 
@@ -26,10 +38,7 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
     }
 
     for (int i = 0; i < 26; i++) {
-        // Tulis jumlah kata
         fwrite(&data[i].count, sizeof(int), 1, fp);
-        
-        // Tulis array struct jika ada isinya
         if (data[i].count > 0) {
             fwrite(data[i].entries, sizeof(WordEntry), data[i].count, fp);
         }
@@ -39,7 +48,7 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
     printf("[IO] Data berhasil disimpan ke '%s'.\n", filename);
 }
 
-// --- FUNGSI TAMPILAN TABEL RAPI ---
+// --- FUNGSI TAMPILAN TABEL ---
 void readBinaryAndShow(const char *filename, int n) {
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
@@ -50,7 +59,6 @@ void readBinaryAndShow(const char *filename, int n) {
     printf("\n");
     printf("TAMPILAN DATA (%d Kata Teratas per Abjad)\n", n);
     
-    // Header Tabel dengan Garis Ganda agar terlihat tegas
     printf("========================================================\n");
     printf("| %-5s | %-30s | %-12s |\n", "ABJAD", "KATA", "FREKUENSI");
     printf("========================================================\n");
@@ -67,25 +75,13 @@ void readBinaryAndShow(const char *filename, int n) {
             tempBuffer = (WordEntry *)malloc(count * sizeof(WordEntry));
             fread(tempBuffer, sizeof(WordEntry), count, fp);
 
-            // Batasi tampilan sebanyak N atau sebanyak data yang ada
             int limit = (count < n) ? count : n;
             
             for (int j = 0; j < limit; j++) {
-                // Kolom Abjad: Hanya ditampilkan di baris pertama tiap grup huruf
-                // Jika baris ke-0, tampilkan huruf (misal 'A'). Jika tidak, tampilkan spasi.
                 char abjadDisplay = (j == 0) ? ('A' + i) : ' '; 
-                
-                // FORMAT PRINTF TABEL:
-                // %-5c   : Karakter rata kiri (tapi karena kita pakai 1 huruf, posisinya diatur manual agar center)
-                // %-30s  : String rata kiri (lebar 30 char) untuk Kata
-                // %12d   : Angka rata kanan (lebar 12 digit) untuk Frekuensi
-                
                 printf("|   %c   | %-30s | %12d |\n", abjadDisplay, tempBuffer[j].word, tempBuffer[j].frequency);
             }
-            
-            // Garis pemisah antar huruf (single line)
             printf("|-------+--------------------------------+--------------|\n");
-
             free(tempBuffer);
         }
     }
@@ -93,9 +89,7 @@ void readBinaryAndShow(const char *filename, int n) {
     if (!dataFound) {
         printf("|       TIDAK ADA DATA DITEMUKAN                       |\n");
     }
-    
-    // Penutup Tabel (Garis Ganda)
-    printf("=========================================================\n");
+    printf("========================================================\n");
 
     fclose(fp);
 }
