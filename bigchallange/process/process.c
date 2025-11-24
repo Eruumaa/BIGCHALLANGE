@@ -1,37 +1,52 @@
 /* file: process/process.c */
 #include "process.h"
 
-// --- FUNGSI INIT, CLEAN, ADD (TETAP SAMA, TIDAK BERUBAH) ---
-
+// --- FUNGSI INIT ---
 void initMemory(AlphabetGroup data[]) {
     for (int i = 0; i < 26; i++) {
         data[i].count = 0;
-        data[i].capacity = 10; 
+        data[i].capacity = 50; 
         data[i].entries = (WordEntry *)malloc(data[i].capacity * sizeof(WordEntry));
     }
 }
 
-void cleanWord(char *word) {
-    int j = 0;
-    char temp[100];
-    for (int i = 0; word[i] != '\0'; i++) {
-        if (isalpha(word[i])) {
-            temp[j++] = tolower(word[i]);
+// --- FUNGSI HELPER: BLACKLIST KATA SAMPAH ---
+// Fungsi ini mengecek apakah kata termasuk "sampah" sisa domain/url
+int isIgnoredWord(const char *word) {
+    // Daftar kata yang HARUS DIBUANG (Blacklist)
+    // Kamu bisa tambah kata lain di sini jika masih ada yang bocor
+    const char *blacklist[] = {
+        "com", "www", "http", "https", "html", "net", "org", "co", "id", "gov", "edu", NULL
+    };
+    
+    for (int i = 0; blacklist[i] != NULL; i++) {
+        if (strcmp(word, blacklist[i]) == 0) {
+            return 1; // TRUE: Kata ini ada di blacklist, buang!
         }
     }
-    temp[j] = '\0';
-    strcpy(word, temp);
+    return 0; // FALSE: Kata aman
 }
 
+void cleanWord(char *word) {
+    for (int i = 0; word[i] != '\0'; i++) {
+        word[i] = tolower(word[i]);
+    }
+}
+
+// --- FUNGSI ADD (DENGAN FILTER BLACKLIST) ---
 void addWordToMemory(char *word, AlphabetGroup data[]) {
+    // 1. Validasi Panjang
     if (strlen(word) < 2) return;
 
-    int index = word[0] - 'a'; 
+    // 2. Validasi Blacklist (Cek apakah ini "com", "www", dll?)
+    if (isIgnoredWord(word)) return; // Stop, jangan simpan!
+
+    int index = tolower(word[0]) - 'a'; 
     if (index < 0 || index > 25) return; 
 
     AlphabetGroup *group = &data[index];
 
-    // Cek duplikat
+    // Cek Duplikat
     for (int i = 0; i < group->count; i++) {
         if (strcmp(group->entries[i].word, word) == 0) {
             group->entries[i].frequency++;
@@ -39,10 +54,12 @@ void addWordToMemory(char *word, AlphabetGroup data[]) {
         }
     }
 
-    // Resize jika penuh
+    // Resize Memori
     if (group->count == group->capacity) {
         group->capacity *= 2;
-        group->entries = (WordEntry *)realloc(group->entries, group->capacity * sizeof(WordEntry));
+        WordEntry *temp = (WordEntry *)realloc(group->entries, group->capacity * sizeof(WordEntry));
+        if (!temp) exit(1);
+        group->entries = temp;
     }
 
     strcpy(group->entries[group->count].word, word);
@@ -50,74 +67,121 @@ void addWordToMemory(char *word, AlphabetGroup data[]) {
     group->count++;
 }
 
+// --- FUNGSI UTAMA: PROCESS TEXT FILE (Parser Cerdas + Skip URL/CSS) ---
 void processTextFile(const char *filename, AlphabetGroup data[]) {
     FILE *fp = fopen(filename, "r");
     if (!fp) {
         printf("[ERROR] File tidak ditemukan di: %s\n", filename);
-        printf("Pastikan folder 'data' sudah dibuat dan file ada di dalamnya.\n");
         return;
     }
 
-    char buffer[256];
-    printf("[PROCESS] Sedang membaca %s ...\n", filename);
+    printf("[PROCESS] Membaca %s (Filter: URL Tag, CSS Block, & Domain Ext)...\n", filename);
 
-    while (fscanf(fp, "%255s", buffer) == 1) {
-        if (buffer[0] == '<') continue;
+    char buffer[256]; 
+    char tagName[64]; 
+    int bufIdx = 0;
+    int c;
+    
+    int skippingContent = 0; 
+
+    while ((c = fgetc(fp)) != EOF) {
+        
+        // 1. Deteksi Awal Tag '<'
+        if (c == '<') {
+            if (bufIdx > 0) {
+                buffer[bufIdx] = '\0';
+                cleanWord(buffer);
+                addWordToMemory(buffer, data); // Filter 'com' terjadi di dalam fungsi ini
+                bufIdx = 0;
+            }
+
+            // Baca Nama Tag
+            int tIdx = 0;
+            int nextC = fgetc(fp);
+
+            while (nextC != EOF && isspace(nextC)) {
+                nextC = fgetc(fp);
+            }
+
+            while (nextC != EOF && !isspace(nextC) && nextC != '>') {
+                if (tIdx < 63) tagName[tIdx++] = tolower(nextC);
+                nextC = fgetc(fp);
+            }
+            tagName[tIdx] = '\0'; 
+
+            // Cek Skip Mode (style, script, url)
+            if (strcmp(tagName, "style") == 0 || 
+                strcmp(tagName, "script") == 0 || 
+                strcmp(tagName, "url") == 0) {
+                skippingContent = 1; 
+            }
+            else if (strcmp(tagName, "/style") == 0 || 
+                     strcmp(tagName, "/script") == 0 || 
+                     strcmp(tagName, "/url") == 0) {
+                skippingContent = 0;
+            }
+
+            // Habiskan sisa atribut
+            if (nextC != '>') {
+                while ((c = fgetc(fp)) != EOF && c != '>') {}
+            }
+            continue; 
+        }
+
+        // 2. Mode Skip
+        if (skippingContent) {
+            continue;
+        }
+
+        // 3. Ambil Teks Biasa
+        if (isalpha(c)) {
+            if (bufIdx < 255) {
+                buffer[bufIdx++] = tolower(c);
+            }
+        } else {
+            if (bufIdx > 0) {
+                buffer[bufIdx] = '\0';
+                cleanWord(buffer);
+                addWordToMemory(buffer, data); // Filter 'com' akan dicek di sini
+                bufIdx = 0;
+            }
+        }
+    }
+    
+    if (bufIdx > 0) {
+        buffer[bufIdx] = '\0';
         cleanWord(buffer);
         addWordToMemory(buffer, data);
     }
-    
+
     fclose(fp);
-    printf("[SUCCESS] Data berhasil dimuat ke RAM.\n");
+    printf("[SUCCESS] Parsing selesai. Data bersih.\n");
 }
 
-// --- FUNGSI SORTING BARU (BUBBLE SORT) ---
+// --- FUNGSI SORTING ---
+int compareWords(const void *a, const void *b) {
+    WordEntry *entryA = (WordEntry *)a;
+    WordEntry *entryB = (WordEntry *)b;
 
-// Helper function: Menentukan apakah posisi A dan B harus ditukar?
-// Mengembalikan 1 (True) jika posisi SALAH dan perlu tukar.
-int needSwap(WordEntry a, WordEntry b) {
-    // Kriteria 1: Frekuensi (Harus Descending / Besar ke Kecil)
-    // Jika frekuensi B lebih besar dari A, berarti B harusnya di depan -> TUKAR
-    if (b.frequency > a.frequency) return 1;
-    if (b.frequency < a.frequency) return 0; // Sudah benar, A lebih besar
-
-    // Kriteria 2: Panjang Kata (Harus Descending / Panjang ke Pendek)
-    // Jika frekuensi sama, cek panjang
-    int lenA = strlen(a.word);
-    int lenB = strlen(b.word);
-    if (lenB > lenA) return 1; // B lebih panjang, pindah ke depan -> TUKAR
-    if (lenB < lenA) return 0;
-
-    // Kriteria 3: Abjad (Harus Ascending / A ke Z)
-    // Jika frekuensi sama DAN panjang sama, cek abjad
-    // strcmp(a, b) > 0 artinya 'a' lebih besar dari 'b' (contoh: "zorro" vs "apel") -> TUKAR
-    if (strcmp(a.word, b.word) > 0) return 1;
-
-    return 0; // Tidak perlu tukar
+    // 1. Frekuensi (Desc)
+    if (entryB->frequency != entryA->frequency) {
+        return entryB->frequency - entryA->frequency;
+    }
+    // 2. Panjang Kata (Desc)
+    int lenA = strlen(entryA->word);
+    int lenB = strlen(entryB->word);
+    if (lenB != lenA) {
+        return lenB - lenA; 
+    }
+    // 3. Abjad (Asc)
+    return strcmp(entryA->word, entryB->word);
 }
 
 void sortAllData(AlphabetGroup data[]) {
-    printf("[PROCESS] Sedang mengurutkan data (Metode: Bubble Sort)...\n");
-    printf("          Mohon bersabar, ini mungkin memakan waktu.\n");
-
-    // Loop untuk setiap huruf (A-Z)
+    printf("[PROCESS] Sedang mengurutkan data...\n");
     for (int i = 0; i < 26; i++) {
-        int n = data[i].count;
-        if (n < 2) continue; // Kalau datanya 0 atau 1, tidak usah sort
-
-        // Algoritma Bubble Sort
-        for (int j = 0; j < n - 1; j++) {
-            for (int k = 0; k < n - j - 1; k++) {
-                
-                // Cek apakah data[k] dan data[k+1] perlu ditukar
-                if (needSwap(data[i].entries[k], data[i].entries[k+1])) {
-                    
-                    // Proses Tukar (Swap)
-                    WordEntry temp = data[i].entries[k];
-                    data[i].entries[k] = data[i].entries[k+1];
-                    data[i].entries[k+1] = temp;
-                }
-            }
+        if (data[i].count > 0) {
+            qsort(data[i].entries, data[i].count, sizeof(WordEntry), compareWords);
         }
     }
     printf("[SUCCESS] Sorting selesai.\n");

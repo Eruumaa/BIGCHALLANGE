@@ -11,25 +11,21 @@ int showMenu() {
     printf("|      BIG CHALLENGE WORD COUNTER        |\n");
     printf("==========================================\n");
     printf("| 1. Load Data, Sort & Save to Binary    |\n");
-    printf("| 2. Show Top-N Words (Table View)       |\n");
+    printf("| 2. Show Top-N Words (Detail Table)     |\n");
     printf("| 3. Exit                                |\n");
     printf("==========================================\n");
     printf("Pilihan Anda >> ");
 
-    // PERBAIKAN DI SINI:
-    // Cek apakah scanf berhasil membaca angka (return 1 = sukses)
+    // Validasi input (Anti-Crash jika user input huruf)
     if (scanf("%d", &choice) != 1) {
-        // Jika user mengetik huruf/simbol, scanf akan gagal (return 0)
-        // Kita harus membersihkan "sampah" input tersebut dari buffer
-        while (getchar() != '\n'); 
-        
-        // Return angka acak (misal 0) agar dianggap "Pilihan tidak valid" oleh main()
+        while (getchar() != '\n'); // Bersihkan buffer
         return 0; 
     }
 
     return choice;
 }
 
+// FUNGSI SAVE (Format: [Abjad][Jml][Len][Kata][Freq])
 void saveToBinary(AlphabetGroup data[], const char *filename) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
@@ -38,17 +34,33 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
     }
 
     for (int i = 0; i < 26; i++) {
-        fwrite(&data[i].count, sizeof(int), 1, fp);
-        if (data[i].count > 0) {
-            fwrite(data[i].entries, sizeof(WordEntry), data[i].count, fp);
+        char abjad = 'a' + i;
+        int count = data[i].count;
+
+        // 1. [Abjad]
+        fwrite(&abjad, sizeof(char), 1, fp);
+        // 2. [Jumlah Kata di Abjad ini]
+        fwrite(&count, sizeof(int), 1, fp);
+
+        for (int j = 0; j < count; j++) {
+            char *wordPtr = data[i].entries[j].word;
+            int len = strlen(wordPtr);
+            int freq = data[i].entries[j].frequency;
+
+            // 3. [Panjang Kata]
+            fwrite(&len, sizeof(int), 1, fp);
+            // 4. [Kata]
+            fwrite(wordPtr, sizeof(char), len, fp);
+            // 5. [Frekuensi]
+            fwrite(&freq, sizeof(int), 1, fp);
         }
     }
 
     fclose(fp);
-    printf("[IO] Data berhasil disimpan ke '%s'.\n", filename);
+    printf("[IO] Data tersimpan (Format Lengkap 5 Komponen) di '%s'.\n", filename);
 }
 
-// --- FUNGSI TAMPILAN TABEL ---
+// FUNGSI READ (Tabel 5 Kolom)
 void readBinaryAndShow(const char *filename, int n) {
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
@@ -57,39 +69,76 @@ void readBinaryAndShow(const char *filename, int n) {
     }
 
     printf("\n");
-    printf("TAMPILAN DATA (%d Kata Teratas per Abjad)\n", n);
+    printf("TAMPILAN DATA LENGKAP (%d Kata Teratas per Abjad)\n", n);
     
-    printf("========================================================\n");
-    printf("| %-5s | %-30s | %-12s |\n", "ABJAD", "KATA", "FREKUENSI");
-    printf("========================================================\n");
+    // Header Tabel 5 Kolom
+    printf("================================================================================\n");
+    printf("| %-5s | %-8s | %-7s | %-30s | %-11s |\n", 
+           "ABJAD", "JUMLAH", "PANJANG", "KATA", "FREKUENSI");
+    printf("================================================================================\n");
 
-    int count;
-    WordEntry *tempBuffer;
     int dataFound = 0; 
 
     for (int i = 0; i < 26; i++) {
+        char abjad;
+        int count;
+
+        // Baca Header Group: [Abjad] & [Jumlah Kata]
+        if (fread(&abjad, sizeof(char), 1, fp) != 1) break;
         fread(&count, sizeof(int), 1, fp);
 
         if (count > 0) {
             dataFound = 1;
-            tempBuffer = (WordEntry *)malloc(count * sizeof(WordEntry));
-            fread(tempBuffer, sizeof(WordEntry), count, fp);
+            int printedCount = 0;
 
-            int limit = (count < n) ? count : n;
-            
-            for (int j = 0; j < limit; j++) {
-                char abjadDisplay = (j == 0) ? ('A' + i) : ' '; 
-                printf("|   %c   | %-30s | %12d |\n", abjadDisplay, tempBuffer[j].word, tempBuffer[j].frequency);
+            for (int j = 0; j < count; j++) {
+                int len;
+                int freq;
+                char buffer[256]; 
+
+                // Baca Detail Kata: [Panjang] -> [Kata] -> [Frekuensi]
+                fread(&len, sizeof(int), 1, fp);
+                
+                if (len >= 256) len = 255; // Safety
+                fread(buffer, sizeof(char), len, fp);
+                buffer[len] = '\0'; // Null terminator
+
+                fread(&freq, sizeof(int), 1, fp);
+
+                // Tampilkan hanya jika belum mencapai batas N
+                if (printedCount < n) {
+                    // Kolom Abjad & Jml Data hanya muncul di baris pertama grup
+                    char abjadDisplay = (printedCount == 0) ? (abjad - 32) : ' '; // Uppercase
+                    
+                    // Variabel bantu untuk print Jml Data (hanya baris pertama)
+                    // Jika bukan baris pertama, kita cetak string kosong ""
+                    // Tapi karena %d butuh int, kita akali dengan logika printf terpisah atau conditional value
+                    
+                    // Cetak Bagian Kiri (Abjad & Jumlah)
+                    if (printedCount == 0) {
+                        printf("|   %c   | %-8d ", abjadDisplay, count);
+                    } else {
+                        printf("|       |          "); // Kosongkan kolom ini
+                    }
+
+                    // Cetak Bagian Kanan (Panjang, Kata, Frekuensi)
+                    printf("| %-7d | %-30s | %11d |\n", len, buffer, freq);
+                    
+                    printedCount++;
+                }
             }
-            printf("|-------+--------------------------------+--------------|\n");
-            free(tempBuffer);
+            
+            // Garis pemisah antar abjad
+            if (printedCount > 0) {
+                printf("|-------+----------+---------+--------------------------------+-------------|\n");
+            }
         }
     }
 
     if (!dataFound) {
-        printf("|       TIDAK ADA DATA DITEMUKAN                       |\n");
+        printf("|                 TIDAK ADA DATA DITEMUKAN                                  |\n");
     }
-    printf("========================================================\n");
-
+    
+    printf("===============================================================================\n");
     fclose(fp);
 }
