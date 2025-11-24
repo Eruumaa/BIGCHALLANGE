@@ -5,13 +5,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Kita include process.h agar fileio kenal struct 'AlphabetGroup'
-// Menggunakan "../" untuk mundur satu folder lalu masuk ke process
+// Include process.h agar kenal struct 'AlphabetGroup'
 #include "../process/process.h"
 
 // --- PROTOTYPE FUNGSI IO ---
 int showMenu();
 void saveToBinary(AlphabetGroup data[], const char *filename);
 void readBinaryAndShow(const char *filename, int n);
+
+// [BARU] Fungsi Utilitas Tampilan
+void clearScreen();
+void waitUser();
 
 #endif
