@@ -13,4 +13,8 @@ int showMenu();
 void saveToBinary(AlphabetGroup data[], const char *filename);
 void readBinaryAndShow(const char *filename, int n);
 
+// Fungsi utilitas tampilan
+void clearScreen();
+void waitUser();
+
 #endif
