@@ -6,9 +6,6 @@
 #include <string.h>
 #include <ctype.h>
 
-// --- STRUKTUR DATA UTAMA ---
-// Disimpan di sini karena 'process' adalah pemilik logika data
-
 typedef struct {
     char word[100];
     int frequency;
@@ -20,5 +17,10 @@ typedef struct {
     int capacity;       
 } AlphabetGroup;
 
+void initMemory(AlphabetGroup data[]);
+void processTextFile(const char *filename, AlphabetGroup data[]);
+void cleanWord(char *Word);
+void addWordToMemory(char *word, AlphabetGroup data[]);
+void sortAllData(AlphabetGroup data[]);
 
 #endif
