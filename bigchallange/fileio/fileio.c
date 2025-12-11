@@ -31,7 +31,7 @@ int showMenu() {
         while (getchar() != '\n');
         return 0; 
     }
-    While (getchar() != '\n');
+    while (getchar() != '\n');
 
     return choice;
 }
@@ -67,19 +67,12 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
 void readBinaryAndShow(const char *filename, int n) {
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
-        printf("File binary belum ada. Jalankan menu 1 terlebih dahulu!\n");
+        printf("File binary belum ada. Jalankan opsi 1 dulu!\n");
         return;
     }
 
     printf("\n");
-    printf("TAMPILAN DATA LENGKAP (%d Kata Teratas per Abjad)\n", n);
-    
-    printf("================================================================================\n");
-    printf("| %-5s | %-11s | %-7s | %-30s | %-11s |\n", 
-           "ABJAD", "JUMLAH DATA", "PANJANG", "KATA", "FREKUENSI");
-    printf("================================================================================\n");
-
-    int totalData = 0;
+    printf("abjad {kata (frekuensi)}\n");
     
     for (int i = 0; i < 26; i++) {
         char abjad;
@@ -88,10 +81,10 @@ void readBinaryAndShow(const char *filename, int n) {
         if (fread(&abjad, sizeof(char), 1, fp) != 1) break;
         fread(&count, sizeof(int), 1, fp);
         
-        char abjadDisplay = abjad - 32;
+        printf("%c\n", abjad);
+        printf(" {");
 
         if (count > 0) {
-            totalData = 1;
             int printedCount = 0;
 
             for (int j = 0; j < count; j++) {
@@ -106,28 +99,16 @@ void readBinaryAndShow(const char *filename, int n) {
                 fread(&freq, sizeof(int), 1, fp);
                 
                 if (printedCount < n) {
-                    if (printedCount == 0) {
-                        printf("|   %c   | %-11d ", abjadDisplay, count);
-                    } else {
-                        printf("|       |             "); 
+                    if (printedCount > 0) {
+                        printf(", ");
                     }
-                    printf("| %-7d | %-30s | %11d |\n", len, buffer, freq);
+                    printf("%s (%d)", buffer, freq);
                     printedCount++;
                 }
             }
-        } 
-        else {
-            printf("|   %c   | %-11d | %-7s | %-30s | %-11s |\n", 
-                   abjadDisplay, 0, "-", "-", "-");
         }
-
-        printf("|-------|-------------|---------|--------------------------------|-------------|\n");
-    }
-
-    if (!totalData) {
-        printf("|                     FILE KOSONG / TIDAK ADA DATA                             |\n");
-    }
+        printf("}\n\n");
+    } 
     
-    printf("================================================================================\n");
     fclose(fp);
 }

@@ -20,7 +20,7 @@ typedef struct {
 void initMemory(AlphabetGroup data[]);
 void processTextFile(const char *filename, AlphabetGroup data[]);
 void cleanWord(char *Word);
-void addWordToMemory(char *word, AlphabetGroup data[]);
-void sortAllData(AlphabetGroup data[]);
+void wordToMemory(char *word, AlphabetGroup data[]);
+void sortingData(AlphabetGroup data[]);
 
 #endif
