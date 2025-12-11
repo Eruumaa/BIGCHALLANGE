@@ -81,8 +81,7 @@ void readBinaryAndShow(const char *filename, int n) {
         if (fread(&abjad, sizeof(char), 1, fp) != 1) break;
         fread(&count, sizeof(int), 1, fp);
         
-        printf("%c\n", abjad);
-        printf(" {");
+        printf("%c     {", abjad);
 
         if (count > 0) {
             int printedCount = 0;
@@ -107,7 +106,7 @@ void readBinaryAndShow(const char *filename, int n) {
                 }
             }
         }
-        printf("}\n\n");
+        printf("}\n");
     } 
     
     fclose(fp);

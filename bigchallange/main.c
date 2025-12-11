@@ -3,8 +3,9 @@
 #include "fileio/fileio.h"
 #include "process/process.h"
 
+AlphabetGroup dictionary[26];
+
 int main () {
-    AlphabetGroup dictionary[26];
 
     initMemory(dictionary);
     
