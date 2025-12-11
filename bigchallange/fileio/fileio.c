@@ -100,6 +100,9 @@ void readBinaryAndShow(const char *filename, int n) {
                 if (printedCount < n) {
                     if (printedCount > 0) {
                         printf(", ");
+                        if (printedCount % 5 == 0) {
+                            printf("\n       ");
+                        }
                     }
                     printf("%s (%d)", buffer, freq);
                     printedCount++;
