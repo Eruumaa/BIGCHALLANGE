@@ -126,7 +126,7 @@
         if (lenCand > lenBest) return 1;
         if (lenCand< lenBest) return 0;
 
-        if (strcmp(candidate.word, currentBest.word) < 0) return 1;
+        if (strcmp(candidate.word, currentBest.word) > 0) return 1;
 
         return 0;
     }

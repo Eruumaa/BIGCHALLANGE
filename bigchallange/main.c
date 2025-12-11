@@ -17,24 +17,41 @@ int main () {
         choice = showMenu();
 
         if (choice == 1) {
+            initMemory(dictionary);
             processTextFile("data/Data-50k.txt", dictionary);
             sortingData(dictionary);
             saveToBinary(dictionary, "output.bin");
-
             waitUser();
         } else if (choice == 2) {
+            FILE *checkFile = fopen ("output.bin", "rb");
+
+            if (checkFile == NULL) {
+                printf("[INFO] File binary belum ada. Memproses data langsung...\n");
+                initMemory(dictionary);
+                processTextFile("data/Data-50K.txt", dictionary);
+                sortingData(dictionary);
+                saveToBinary(dictionary, "output.bin");
+                printf("[INFO] Data berhasil diproses dan disimpan.\n");
+            } else {
+                fclose(checkFile);
+            }
             int n;
-            printf("Masukkan nilai n: ");
+            printf("\nMasukkan nilai n (0 < n <= 25): ");
 
             if (scanf("%d", &n) == 1) {
                 while (getchar() != '\n');
-                readBinaryAndShow("output.bin", n);
+                if (n > 0 && n <= 25) {
+                    readBinaryAndShow("output.bin", n);
+                } else {
+                    printf("[ERROR] Nilai n harus antara 1 sampai 25!\n\n");
+                }
             } else {
                 while (getchar() != '\n');
                 printf("[ERROR] Input harus angka!\n");
             }
             waitUser();
-        } else if (choice == 3) {
+        } 
+        else if (choice == 3) {
             printf("Program Berakhir\n");
             break;
         } else {
