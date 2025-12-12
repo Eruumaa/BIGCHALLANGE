@@ -18,10 +18,10 @@ int showMenu() {
     
     printf("\n");
     printf("==========================================\n");
-    printf("|      BIG CHALLENGE WORD COUNTER        |\n");
+    printf("|          WORD COUNTER PROGRAM          |\n");
     printf("==========================================\n");
     printf("| 1. Baca Data                           |\n");
-    printf("| 2. Menampilkan data ke-n Kata          |\n");
+    printf("| 2. Menampilkan data & Baca (jika Belum)|\n");
     printf("| 3. Keluar                              |\n");
     printf("==========================================\n");
     printf("Pilih >> ");
