@@ -1,6 +1,6 @@
 #ifndef PROCESS_H
 #define PROCESS_H
-#define MAX_WORDS_GROUP 2000
+#define MAX_WORDS_GROUP 15000
 #define MAX_WORDS_LEN 50
 
 #include <stdio.h>

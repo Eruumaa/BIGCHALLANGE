@@ -26,7 +26,6 @@ int showMenu() {
     printf("==========================================\n");
     printf("Pilih >> ");
 
-
     if (scanf("%d", &choice) != 1) {
         while (getchar() != '\n');
         return 0; 
@@ -38,12 +37,10 @@ int showMenu() {
 
 void saveToBinary(AlphabetGroup data[], const char *filename) {
     FILE *fp = fopen(filename, "wb");
-
     if (!fp) {
         printf("Gagal membuat file binary.\n");
         return;
     }
-
     for (int i = 0; i < 26; i++) {
         char abjad = 'a' + i;
         int count = data[i].count;
@@ -59,7 +56,6 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
             fwrite(&freq, sizeof(int), 1, fp);
         }
     }
-
     fclose(fp);
     printf("Data tersimpan di '%s'.\n", filename);
 }
@@ -70,7 +66,6 @@ void readBinaryAndShow(const char *filename, int n) {
         printf("File binary belum ada. Jalankan opsi 1 dulu!\n");
         return;
     }
-
     printf("\n");
     printf("abjad {kata (frekuensi)}\n");
     
@@ -111,6 +106,5 @@ void readBinaryAndShow(const char *filename, int n) {
         }
         printf("}\n");
     } 
-    
     fclose(fp);
 }
