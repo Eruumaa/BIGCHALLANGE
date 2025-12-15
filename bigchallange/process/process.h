@@ -18,7 +18,7 @@ typedef struct {
     int count;                 
 } AlphabetGroup;
 
-void initMemory(AlphabetGroup data[]);
+void fixMemory(AlphabetGroup data[]);
 void processTextFile(const char *filename, AlphabetGroup data[]);
 void cleanWord(char *Word);
 void wordToMemory(char *word, AlphabetGroup data[]);
