@@ -17,13 +17,13 @@ int showMenu() {
     int choice;
     
     printf("\n");
-    printf("==========================================\n");
-    printf("|          WORD COUNTER PROGRAM          |\n");
-    printf("==========================================\n");
-    printf("| 1. Baca Data                           |\n");
-    printf("| 2. Menampilkan data & Baca (jika Belum)|\n");
-    printf("| 3. Keluar                              |\n");
-    printf("==========================================\n");
+    printf("=================================================\n");
+    printf("|             WORD COUNTER PROGRAM              |\n");
+    printf("================================================|\n");
+    printf("| 1. Baca Data                                  |\n");
+    printf("| 2. Menampilkan n kata & Baca Data (jika Belum)|\n");
+    printf("| 3. Keluar                                     |\n");
+    printf("=================================================\n");
     printf("Pilih >> ");
 
     if (scanf("%d", &choice) != 1) {

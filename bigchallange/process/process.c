@@ -6,7 +6,7 @@ void cleanWord(char *word) {
     }
 }
 
-void initMemory(AlphabetGroup data[]) {
+void fixMemory(AlphabetGroup data[]) {
     for (int i = 0; i < 26; i++) {
         data[i].count = 0;
     }
@@ -25,19 +25,15 @@ int blackListWord(const char * word) {
 }
 
 void wordToMemory(char *Word, AlphabetGroup data[]) {
-    int index = tolower(Word[0]) - 'a';
-
     if (Word == NULL || *Word == '\0') return;
-
     cleanWord(Word);
-    
-    for (int i = 0; Word[i] != '\0'; i++) {
-        if(!isalpha(Word[i])) return;
-    }
-    if (strlen(Word) < 1) return;
-    if (strlen(Word) >= MAX_WORDS_LEN) return;
-    if (blackListWord(Word)) return;
+    if (!isalpha(Word[0])) return;
+
+    int index = tolower(Word[0]) - 'a';
     if (index < 0 || index > 25) return;
+
+    if (strlen(Word) >= MAX_WORDS_LEN) return;
+    if (blackListWord(Word));
 
     AlphabetGroup *group = &data[index];
     for (int i = 0; i < group->count; i++) {
@@ -46,9 +42,8 @@ void wordToMemory(char *Word, AlphabetGroup data[]) {
         return;
         }
     }
-    if (group->count >= MAX_WORDS_GROUP) {
-        return;
-    }
+    if (group->count >= MAX_WORDS_GROUP) return;
+
     strcpy(group->entries[group->count].word, Word);
     group->entries[group->count].frequency = 1;
     group->count++;
@@ -108,21 +103,22 @@ void processTextFile(const char *filename, AlphabetGroup data[]) {
 }
 
 int pickPosition(WordEntry candidate, WordEntry currentBest) {
-    if (candidate.frequency > currentBest.frequency) return 1;
-    if (candidate.frequency < currentBest.frequency) return 0;
-
     int lenCand = strlen(candidate.word);
     int lenBest = strlen(currentBest.word);
-    if (lenCand > lenBest) return 1;
-    if (lenCand< lenBest) return 0;
-
-    if (strcmp(candidate.word, currentBest.word) > 0) return 1;
-
-    return 0;
+    // Posisi Frekuensi
+    if (candidate.frequency != currentBest.frequency) {
+        return candidate.frequency > currentBest.frequency;
+    }
+    // Posisi Panjang kata
+    if (lenCand != lenBest) {
+        return lenCand > lenBest;
+    }
+    // Posisi Abjad
+    return strcmp(candidate.word, currentBest.word) > 0;
 }
 
 void sortingData(AlphabetGroup data[]) {
-    printf("[PROCESS] Sedang mengurutkan data (Metode: Selection Sort)...\n");
+    printf("[PROCESS] Sedang mengurutkan data...\n");
 
     for (int i = 0; i < 26; i++) {
         int n = data[i].count;

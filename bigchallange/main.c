@@ -7,7 +7,7 @@ AlphabetGroup dictionary[26];
 
 int main () {
 
-    initMemory(dictionary);
+    fixMemory(dictionary);
     
     int choice ;
 
@@ -17,8 +17,21 @@ int main () {
         choice = showMenu();
 
         if (choice == 1) {
-            initMemory(dictionary);
-            processTextFile("data/Data-50k.txt", dictionary);
+            char filename[50];
+            fixMemory(dictionary);
+            printf("\nMasukkan nama file input (txt): ");
+            scanf("%s", filename);
+
+            FILE *read = fopen (filename, "r");
+            if (read == NULL) {
+                printf("[ERROR] File '%s' tidak ditemukan!\n", filename);
+                waitUser();
+                continue;
+            }
+            fclose(read);
+
+            fixMemory(dictionary);
+            processTextFile(filename, dictionary);
             sortingData(dictionary);
             saveToBinary(dictionary, "output.bin");
             waitUser();
@@ -27,7 +40,7 @@ int main () {
 
             if (checkFile == NULL) {
                 printf("[INFO] File binary belum ada. Memproses data langsung...\n");
-                initMemory(dictionary);
+                fixMemory(dictionary);
                 processTextFile("data/Data-50K.txt", dictionary);
                 sortingData(dictionary);
                 saveToBinary(dictionary, "output.bin");
@@ -36,7 +49,7 @@ int main () {
                 fclose(checkFile);
             }
             int n;
-            printf("\nMasukkan nilai n (0 < n <= 25): ");
+            printf("Masukkan nilai n (0 < n <= 25): ");
 
             if (scanf("%d", &n) == 1) {
                 while (getchar() != '\n');
