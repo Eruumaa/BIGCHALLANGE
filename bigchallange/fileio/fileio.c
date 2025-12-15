@@ -1,6 +1,7 @@
 #include "fileio.h"
 
 void clearScreen() {
+    // Membersihkan layar terminal
     #ifdef _WIN32
         system("cls");
     #else
@@ -9,6 +10,7 @@ void clearScreen() {
 }
 
 void waitUser() {
+    // Menahan program sampai user menekan ENTER
     printf("\nTekan [ENTER] untuk kembali ke menu utama...");
     getchar(); 
 }
@@ -36,6 +38,7 @@ int showMenu() {
 }
 
 void saveToBinary(AlphabetGroup data[], const char *filename) {
+    // Menyimpan seluruh data kata ke file biner
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
         printf("Gagal membuat file binary.\n");
@@ -61,6 +64,7 @@ void saveToBinary(AlphabetGroup data[], const char *filename) {
 }
 
 void readBinaryAndShow(const char *filename, int n) {
+    // Membaca file biner dan menampilkan maksimal n kata per abjad
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
         printf("File binary belum ada. Jalankan opsi 1 dulu!\n");
