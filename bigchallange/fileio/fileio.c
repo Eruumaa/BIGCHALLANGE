@@ -67,7 +67,7 @@ void readBinaryAndShow(const char *filename, int n) {
     // Membaca file biner dan menampilkan maksimal n kata per abjad
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
-        printf("File binary belum ada. Jalankan opsi 1 dulu!\n");
+        printf("File binary belum ada\n");
         return;
     }
     printf("\n");
@@ -104,7 +104,7 @@ void readBinaryAndShow(const char *filename, int n) {
                         }
                     }
                     printf("%s (%d)", buffer, freq);
-                    printedCount++;
+                    printedCount++; 
                 }
             }
         }

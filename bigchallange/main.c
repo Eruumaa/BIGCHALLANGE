@@ -3,11 +3,11 @@
 #include "fileio/fileio.h"
 #include "process/process.h"
 
-AlphabetGroup dictionary[26];
+AlphabetGroup words[26];
 
 int main () {
 
-    fixMemory(dictionary);
+    clearMemory(words);
     
     int choice ;
 
@@ -18,8 +18,8 @@ int main () {
 
         if (choice == 1) {
             char filename[50];
-            fixMemory(dictionary);
-            printf("\nMasukkan nama file input (txt): ");
+            clearMemory(words);
+            printf("Masukkan nama file input (txt): ");
             scanf("%s", filename);
 
             FILE *read = fopen (filename, "r");
@@ -30,31 +30,34 @@ int main () {
             }
             fclose(read);
 
-            fixMemory(dictionary);
-            processTextFile(filename, dictionary);
-            sortingData(dictionary);
-            saveToBinary(dictionary, "output.bin");
+            clearMemory(words);
+            processTextFile(filename, words);
+            sortingData(words);
+            saveToBinary(words, "Data.bin");
             waitUser();
         } else if (choice == 2) {
-            FILE *checkFile = fopen ("output.bin", "rb");
+            int n;
+            FILE *checkFile = fopen ("Data.bin", "rb");
 
             if (checkFile == NULL) {
                 printf("[INFO] File binary belum ada. Memproses data langsung...\n");
-                fixMemory(dictionary);
-                processTextFile("data/Data-50K.txt", dictionary);
-                sortingData(dictionary);
-                saveToBinary(dictionary, "output.bin");
+                clearMemory(words);
+                if (processTextFile("Data-50K.txt", words) == 1) {
+                    waitUser();
+                    continue;
+                }
+                sortingData(words);
+                saveToBinary(words, "Data.bin");
                 printf("[INFO] Data berhasil diproses dan disimpan.\n");
             } else {
                 fclose(checkFile);
             }
-            int n;
-            printf("Masukkan nilai n (0 < n <= 25): ");
 
+            printf("Masukkan nilai n (0 < n <= 25): ");
             if (scanf("%d", &n) == 1) {
                 while (getchar() != '\n');
                 if (n > 0 && n <= 25) {
-                    readBinaryAndShow("output.bin", n);
+                    readBinaryAndShow("Data.bin", n);
                 } else {
                     printf("[ERROR] Nilai n harus antara 1 sampai 25!\n\n");
                 }

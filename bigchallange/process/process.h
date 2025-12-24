@@ -18,8 +18,8 @@ typedef struct {
     int count;                 
 } AlphabetGroup;
 
-void fixMemory(AlphabetGroup data[]);
-void processTextFile(const char *filename, AlphabetGroup data[]);
+int processTextFile(const char *filename, AlphabetGroup data[]);
+void clearMemory(AlphabetGroup data[]);
 void cleanWord(char *Word);
 void wordToMemory(char *word, AlphabetGroup data[]);
 void sortingData(AlphabetGroup data[]);
