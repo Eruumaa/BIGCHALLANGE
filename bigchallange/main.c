@@ -20,7 +20,7 @@ int main () {
             char filename[50];
             clearMemory(words);
             printf("Masukkan nama file input (txt): ");
-            scanf("%s", filename);
+            scanf("%49s", filename);
 
             FILE *read = fopen (filename, "r");
             if (read == NULL) {

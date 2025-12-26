@@ -15,7 +15,7 @@ typedef struct {
 
 typedef struct {
     WordEntry entries[MAX_WORDS_GROUP]; 
-    int count;                 
+    int count;               
 } AlphabetGroup;
 
 int processTextFile(const char *filename, AlphabetGroup data[]);
