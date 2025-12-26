@@ -169,5 +169,3 @@ z     {zimbio (3049), zona (1409), zlatan (445), zanetti (434), zidane (319)}
 ---
 
 <p align="center">Made with ❤️ and C</p>
-
-```
