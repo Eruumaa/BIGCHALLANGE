@@ -161,6 +161,7 @@ z     {zimbio (3049), zona (1409), zlatan (445), zanetti (434), zidane (319)}
 ## 👨‍💻 Author
 
 **Muhammad Aqil Mubarak**
+**&**
 **Ahmad Damanhuri**
 
 * Mahasiswa Informatika - Universitas Syiah Kuala
