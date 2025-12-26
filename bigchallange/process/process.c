@@ -25,18 +25,19 @@ int blackListWord(const char * word) {
 }
 
 void wordToMemory(char *Word, AlphabetGroup data[]) {
-    if (Word == NULL || *Word == '\0') return;
-    if (strlen(Word) < 2) return;
-    if (strlen(Word) >= MAX_WORDS_LEN) return;
+if (Word == NULL || *Word == '\0') return;
+    
+    int len = strlen(Word);
+    if (len < 2) return;              
+    if (len >= MAX_WORDS_LEN) return;  
 
-    cleanWord(Word);
+    cleanWord(Word); 
 
-    if (!isalpha(Word[0])) return;
-    if (blackListWord(Word)) return;
+    if (!isalpha(Word[0])) return;   
+    if (blackListWord(Word)) return; 
 
     int index = tolower(Word[0]) - 'a';
     if (index < 0 || index > 25) return;
-
 
     AlphabetGroup *group = &data[index];
     for (int i = 0; i < group->count; i++) {
@@ -53,43 +54,89 @@ void wordToMemory(char *Word, AlphabetGroup data[]) {
 }
 
 int processTextFile(const char *filename, AlphabetGroup data[]) {
-    char linebuffer[20000];
-    
     FILE *fp = fopen(filename, "r");
     if (!fp) {
-        printf ("[ERROR] Gagal membuka file %s, file tidak ada\n", filename);
+        printf("[ERROR] Gagal membuka file %s\n", filename);
         return 1;
     }
-    printf("[PROCESS] Membaca file %s\n", filename);
+    printf("[PROCESS] Membaca file %s ...\n", filename);
 
-    while (fgets(linebuffer, sizeof(linebuffer), fp)) {
-        char *startBody = strstr(linebuffer, "<body");
-        char *endBody = strstr(linebuffer, "</body");
+    char buffer[256];   
+    char tagName[64];   
+    int bufIdx = 0;
+    int c;
+    int inTitle = 0; 
+    int inBody = 0;  
+    int inUrl = 0;   
+    int inSkip = 0;
 
-        if (startBody == NULL || endBody == NULL) {
-            continue;
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '<') {
+            if (bufIdx > 0) {
+                buffer[bufIdx] = '\0';
+                if ((inTitle || inBody) && !inUrl && !inSkip) {
+                    wordToMemory(buffer, data);
+                }
+                bufIdx = 0;
+            }
+
+            int tIdx = 0;
+            int nextC = fgetc(fp);
+            
+            while (nextC != EOF && isspace(nextC)) nextC = fgetc(fp); 
+            while (nextC != EOF && !isspace(nextC) && nextC != '>') {
+                if (tIdx < 63) tagName[tIdx++] = tolower(nextC);
+                nextC = fgetc(fp);
+            }
+            tagName[tIdx] = '\0';
+            
+            // Mengabaikan string dalam tag <url>
+            if (strcmp(tagName, "url") == 0) inUrl = 1;
+            else if (strcmp(tagName, "/url") == 0) inUrl = 0;
+
+            // Menghimpun kata diantara <title>
+            else if (strcmp(tagName, "title") == 0) inTitle = 1;
+            else if (strcmp(tagName, "/title") == 0) inTitle = 0;
+
+            // 3. Himpun kata diantara <body>
+            else if (strcmp(tagName, "body") == 0) inBody = 1;
+            else if (strcmp(tagName, "/body") == 0) inBody = 0;
+
+            // 4. Skip script/style (sampah teknis)
+            else if (strcmp(tagName, "script") == 0 || strcmp(tagName, "style") == 0) inSkip = 1;
+            else if (strcmp(tagName, "/script") == 0 || strcmp(tagName, "/style") == 0) inSkip = 0;
+
+            // Habiskan sisa tag (atribut) sampai ketemu '>'
+            if (nextC != '>') {
+                while ((c = fgetc(fp)) != EOF && c != '>') {}
+            }
+            continue; 
         }
-        startBody += 6;
-        *endBody = '\0';
 
-        int writeIdx = 0;
-        for (int readIdx = 0; linebuffer[readIdx] != '\0'; readIdx++) {
-            if (startBody[readIdx] != '.') {
-                startBody[writeIdx++] = startBody[readIdx];
+        // --- AMBIL KATA ---
+        if ((inTitle || inBody) && !inUrl && !inSkip) {
+            if (isalpha(c)) {
+                if (bufIdx < MAX_WORDS_LEN - 1) {
+                    buffer[bufIdx++] = (char)c;
+                }
+            } else {
+                // Ketemu pemisah (spasi/tanda baca) -> Proses Kata
+                if (bufIdx > 0) {
+                    buffer[bufIdx] = '\0';
+                    wordToMemory(buffer, data);
+                    bufIdx = 0;
+                }
             }
         }
-        startBody[writeIdx] = '\0';
-
-        const char *ignore = " \t\n\r,;:?!/()[]{}'\"-_=&|1234567890<>+*";
-        char *token = strtok(startBody, ignore);        
-        while (token != NULL) {
-            wordToMemory(token, data);
-            token = strtok(NULL, ignore);
-        }
     }
-    fclose(fp);
 
-    printf("[SUCCESS] Parsing selesai\n");
+    if (bufIdx > 0 && (inTitle || inBody) && !inUrl && !inSkip) {
+        buffer[bufIdx] = '\0';
+        wordToMemory(buffer, data);
+    }
+
+    fclose(fp);
+    printf("[SUCCESS] Parsing selesai.\n");
     return 0;
 }
 
@@ -105,7 +152,7 @@ int pickPosition(WordEntry candidate, WordEntry currentBest) {
         return lenCand > lenBest;
     }
     // Posisi Abjad
-    return strcmp(candidate.word, currentBest.word) > 0;
+    return strcmp(candidate.word, currentBest.word) < 0;
 }
 
 void sortingData(AlphabetGroup data[]) {
