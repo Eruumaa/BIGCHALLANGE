@@ -1,6 +1,6 @@
 #include "process.h"
 
-// 
+// Fungsi mengubah setiap kata menjadi huruf kecil
 void cleanWord(char *word) {
     for (int i = 0; word[i] != '\0'; i++) {
         word[i] = tolower(word[i]);
