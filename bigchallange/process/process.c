@@ -1,17 +1,20 @@
 #include "process.h"
 
+// 
 void cleanWord(char *word) {
     for (int i = 0; word[i] != '\0'; i++) {
         word[i] = tolower(word[i]);
     }
 }
 
+// Fungsi untuk reset isi memori
 void clearMemory(AlphabetGroup data[]) {
     for (int i = 0; i < 26; i++) {
         data[i].count = 0;
     }
 }
 
+// Fungsi untuk memastikan kata-kata tertentu tidak masuk
 int blackListWord(const char * word) {
     const char *blacklist[] = {
         "com", "www", "https", "html", "net", "net", "org", "co", "id", "gov", "edu", "body", "title", "read", "head", 
@@ -24,6 +27,7 @@ int blackListWord(const char * word) {
     return 0;
 }
 
+// Fungsi untuk memasukkan tiap-tiap kata ke data utama
 void wordToMemory(char *Word, AlphabetGroup data[]) {
 if (Word == NULL || *Word == '\0') return;
     
@@ -53,6 +57,7 @@ if (Word == NULL || *Word == '\0') return;
     group->count++;
 }
 
+// Fungsi membaca file text dalam tag <title> dan <body> saja
 int processTextFile(const char *filename, AlphabetGroup data[]) {
     FILE *fp = fopen(filename, "r");
     if (!fp) {
@@ -98,29 +103,29 @@ int processTextFile(const char *filename, AlphabetGroup data[]) {
             else if (strcmp(tagName, "title") == 0) inTitle = 1;
             else if (strcmp(tagName, "/title") == 0) inTitle = 0;
 
-            // 3. Himpun kata diantara <body>
+            // Menghimpun kata diantara <body>
             else if (strcmp(tagName, "body") == 0) inBody = 1;
             else if (strcmp(tagName, "/body") == 0) inBody = 0;
 
-            // 4. Skip script/style (sampah teknis)
+            // Skip script/style 
             else if (strcmp(tagName, "script") == 0 || strcmp(tagName, "style") == 0) inSkip = 1;
             else if (strcmp(tagName, "/script") == 0 || strcmp(tagName, "/style") == 0) inSkip = 0;
 
-            // Habiskan sisa tag (atribut) sampai ketemu '>'
+            // Habiskan sisa tag sampai ke '>'
             if (nextC != '>') {
                 while ((c = fgetc(fp)) != EOF && c != '>') {}
             }
             continue; 
         }
 
-        // --- AMBIL KATA ---
+        // Mengambil kata
         if ((inTitle || inBody) && !inUrl && !inSkip) {
             if (isalpha(c)) {
                 if (bufIdx < MAX_WORDS_LEN - 1) {
                     buffer[bufIdx++] = (char)c;
                 }
             } else {
-                // Ketemu pemisah (spasi/tanda baca) -> Proses Kata
+                // Jika jumpa pemisah spasi/tanda baca
                 if (bufIdx > 0) {
                     buffer[bufIdx] = '\0';
                     wordToMemory(buffer, data);
@@ -140,6 +145,7 @@ int processTextFile(const char *filename, AlphabetGroup data[]) {
     return 0;
 }
 
+// Fungsi untuk menentukan posisi kata untuk membantu proses sorting 
 int pickPosition(WordEntry candidate, WordEntry currentBest) {
     int lenCand = strlen(candidate.word);
     int lenBest = strlen(currentBest.word);
@@ -155,6 +161,7 @@ int pickPosition(WordEntry candidate, WordEntry currentBest) {
     return strcmp(candidate.word, currentBest.word) < 0;
 }
 
+// Fungsi sorting menggunakan metode insertion sort
 void sortingData(AlphabetGroup data[]) {
     printf("[PROCESS] Sedang mengurutkan data...\n");
 
