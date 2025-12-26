@@ -3,6 +3,7 @@
 #include "fileio/fileio.h"
 #include "process/process.h"
 
+// Struct data global
 AlphabetGroup words[26];
 
 int main () {
@@ -16,6 +17,7 @@ int main () {
 
         choice = showMenu();
 
+        // Menu ke - 1
         if (choice == 1) {
             char filename[50];
             clearMemory(words);
@@ -35,7 +37,9 @@ int main () {
             sortingData(words);
             saveToBinary(words, "Data.bin");
             waitUser();
-        } else if (choice == 2) {
+        } 
+        // Menu ke - 2
+        else if (choice == 2) {
             int n;
             FILE *checkFile = fopen ("Data.bin", "rb");
 
@@ -67,6 +71,7 @@ int main () {
             }
             waitUser();
         } 
+        // Menu ke - 3
         else if (choice == 3) {
             printf("Program Berakhir\n");
             break;

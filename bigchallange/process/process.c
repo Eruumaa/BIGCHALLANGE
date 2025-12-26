@@ -37,9 +37,11 @@ if (Word == NULL || *Word == '\0') return;
 
     cleanWord(Word); 
 
+    // Penggunaan isalpha untuk memastikan kata yang disimpan diawali dengan huruf
     if (!isalpha(Word[0])) return;   
     if (blackListWord(Word)) return; 
 
+    // Penggunaan tolower untuk memastikan index'A' sama dengan 'a' diawali dari 0
     int index = tolower(Word[0]) - 'a';
     if (index < 0 || index > 25) return;
 
@@ -88,6 +90,7 @@ int processTextFile(const char *filename, AlphabetGroup data[]) {
             int tIdx = 0;
             int nextC = fgetc(fp);
             
+            // Penggunaaan isspace untuk melewati jika jumpa spasi, enter, tab sampai jumpa huruf lain
             while (nextC != EOF && isspace(nextC)) nextC = fgetc(fp); 
             while (nextC != EOF && !isspace(nextC) && nextC != '>') {
                 if (tIdx < 63) tagName[tIdx++] = tolower(nextC);
@@ -120,6 +123,7 @@ int processTextFile(const char *filename, AlphabetGroup data[]) {
 
         // Mengambil kata
         if ((inTitle || inBody) && !inUrl && !inSkip) {
+            // Penggunaan isalpha untuk menyimpan karakter ke dalam buffer jika hanya huruf
             if (isalpha(c)) {
                 if (bufIdx < MAX_WORDS_LEN - 1) {
                     buffer[bufIdx++] = (char)c;
