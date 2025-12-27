@@ -59,89 +59,86 @@ if (Word == NULL || *Word == '\0') return;
     group->count++;
 }
 
-// Fungsi membaca file text dalam tag <title> dan <body> saja
+// Fungsi membaca file text dalam tag <title> dan <body> saja menggunakan tokenisasi
 int processTextFile(const char *filename, AlphabetGroup data[]) {
     FILE *fp = fopen(filename, "r");
     if (!fp) {
         printf("[ERROR] Gagal membuka file %s\n", filename);
         return 1;
     }
-    printf("[PROCESS] Membaca file %s ...\n", filename);
+    printf("[PROCESS] Membaca file %s...\n", filename);
 
-    char buffer[256];   
-    char tagName[64];   
-    int bufIdx = 0;
-    int c;
-    int inTitle = 0; 
-    int inBody = 0;  
-    int inUrl = 0;   
+    char lineBuffer[8192];   
+    char cleanContent[8192]; 
+    int inTag = 0;
+    int inTitle = 0;
+    int inBody = 0;
+    int inUrl = 0;
     int inSkip = 0;
-
-    while ((c = fgetc(fp)) != EOF) {
-        if (c == '<') {
-            if (bufIdx > 0) {
-                buffer[bufIdx] = '\0';
-                if ((inTitle || inBody) && !inUrl && !inSkip) {
-                    wordToMemory(buffer, data);
-                }
-                bufIdx = 0;
+    char tagName[64];
+    int tagIdx = 0;
+    int captureTagName = 0;
+    
+    // Perulangan yang membaca baris perbaris
+    while (fgets(lineBuffer, sizeof(lineBuffer), fp)) {
+        int cleanIdx = 0;
+        // Perulangan untuk membuang tag HTML dan mengambil teks
+        for (int i = 0; lineBuffer[i] != '\0'; i++) {
+            char c = lineBuffer[i];
+            if (c == '<') {
+                inTag = 1;
+                captureTagName = 1;
+                tagIdx = 0;
+                tagName[0] = '\0';
+                cleanContent[cleanIdx++] = ' '; 
+                continue;
             }
-
-            int tIdx = 0;
-            int nextC = fgetc(fp);
-            
-            // Penggunaaan isspace untuk melewati jika jumpa spasi, enter, tab sampai jumpa huruf lain
-            while (nextC != EOF && isspace(nextC)) nextC = fgetc(fp); 
-            while (nextC != EOF && !isspace(nextC) && nextC != '>') {
-                if (tIdx < 63) tagName[tIdx++] = tolower(nextC);
-                nextC = fgetc(fp);
+            if (c == '>') {
+                inTag = 0;
+                captureTagName = 0;
+                tagName[tagIdx] = '\0';
+                // Kondisi untuk mengecek nama tag
+                if (strcmp(tagName, "url") == 0) inUrl = 1;
+                else if (strcmp(tagName, "/url") == 0) inUrl = 0;
+                else if (strcmp(tagName, "title") == 0) inTitle = 1;
+                else if (strcmp(tagName, "/title") == 0) inTitle = 0;
+                else if (strcmp(tagName, "body") == 0) inBody = 1;
+                else if (strcmp(tagName, "/body") == 0) inBody = 0;
+                else if (strcmp(tagName, "script") == 0 || strcmp(tagName, "style") == 0) inSkip = 1;
+                else if (strcmp(tagName, "/script") == 0 || strcmp(tagName, "/style") == 0) inSkip = 0;
+                cleanContent[cleanIdx++] = ' '; 
+                continue;
             }
-            tagName[tIdx] = '\0';
-            
-            // Mengabaikan string dalam tag <url>
-            if (strcmp(tagName, "url") == 0) inUrl = 1;
-            else if (strcmp(tagName, "/url") == 0) inUrl = 0;
-
-            // Menghimpun kata diantara <title>
-            else if (strcmp(tagName, "title") == 0) inTitle = 1;
-            else if (strcmp(tagName, "/title") == 0) inTitle = 0;
-
-            // Menghimpun kata diantara <body>
-            else if (strcmp(tagName, "body") == 0) inBody = 1;
-            else if (strcmp(tagName, "/body") == 0) inBody = 0;
-
-            // Skip script/style 
-            else if (strcmp(tagName, "script") == 0 || strcmp(tagName, "style") == 0) inSkip = 1;
-            else if (strcmp(tagName, "/script") == 0 || strcmp(tagName, "/style") == 0) inSkip = 0;
-
-            // Menghabiskan sisa tag sampai ke '>'
-            if (nextC != '>') {
-                while ((c = fgetc(fp)) != EOF && c != '>') {}
-            }
-            continue; 
-        }
-
-        // Mengambil kata
-        if ((inTitle || inBody) && !inUrl && !inSkip) {
-            // Penggunaan isalpha untuk menyimpan karakter ke dalam buffer jika hanya huruf
-            if (isalpha(c)) {
-                if (bufIdx < MAX_WORDS_LEN - 1) {
-                    buffer[bufIdx++] = (char)c;
+            if (inTag) {
+                if (captureTagName) {
+                    // Pengguanaan isspace untuk mendeteksi akhir dari tag html
+                    if (isspace(c)) {
+                        captureTagName = 0;
+                    } else if (tagIdx < 63) {
+                        tagName[tagIdx++] = tolower(c);
+                        tagName[tagIdx] = '\0';
+                    }
                 }
             } else {
-                // Jika jumpa pemisah spasi/tanda baca
-                if (bufIdx > 0) {
-                    buffer[bufIdx] = '\0';
-                    wordToMemory(buffer, data);
-                    bufIdx = 0;
+                if ((inTitle || inBody) && !inUrl && !inSkip) {
+                    // Penggunaan isalpha untuk membersihkan teks 
+                    if (isalpha(c)) {
+                        cleanContent[cleanIdx++] = c;
+                    } else {
+                        cleanContent[cleanIdx++] = ' ';
+                    }
                 }
             }
         }
-    }
-
-    if (bufIdx > 0 && (inTitle || inBody) && !inUrl && !inSkip) {
-        buffer[bufIdx] = '\0';
-        wordToMemory(buffer, data);
+        cleanContent[cleanIdx] = '\0';
+        // Tokenisasi dengan strtok
+        const char *delimiters = " \t\n\r1234567890!@#$%^&*()-_=+[]{}\\|;:'\",.<>/?`~";
+        
+        char *token = strtok(cleanContent, delimiters);
+        while (token != NULL) {
+            wordToMemory(token, data);
+            token = strtok(NULL, delimiters);
+        }
     }
 
     fclose(fp);
