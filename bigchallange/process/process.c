@@ -114,7 +114,7 @@ int processTextFile(const char *filename, AlphabetGroup data[]) {
             else if (strcmp(tagName, "script") == 0 || strcmp(tagName, "style") == 0) inSkip = 1;
             else if (strcmp(tagName, "/script") == 0 || strcmp(tagName, "/style") == 0) inSkip = 0;
 
-            // Habiskan sisa tag sampai ke '>'
+            // Menghabiskan sisa tag sampai ke '>'
             if (nextC != '>') {
                 while ((c = fgetc(fp)) != EOF && c != '>') {}
             }
