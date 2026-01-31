@@ -103,6 +103,9 @@ Pilih >>
 
 ## 🧠 Detail Teknis
 
+## Explanation Video
+Youtube : https://youtu.be/Dmmf2bHqjjw?si=Zx1RZLf4b_on64ru
+
 ### Struktur Data
 
 Program ini menggunakan *Static Array of Struct* untuk manajemen memori yang stabil tanpa fragmentasi.
